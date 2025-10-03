@@ -1,0 +1,143 @@
+Sql code:CREATE DATABASE employee_db;
+
+\c employee_db;
+
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    department VARCHAR(100),
+    salary DOUBLE PRECISION
+);
+
+java code:
+import java.sql.*;
+import java.util.Scanner;
+
+public class EmployeeDBApp {
+    private static final String URL = "jdbc:mysql://localhost:3306/employee_db"; 
+    private static final String USER = "root";   // change if needed
+    private static final String PASSWORD = "password"; // change if needed
+
+    // For PostgreSQL use:
+    // private static final String URL = "jdbc:postgresql://localhost:5432/employee_db";
+    // private static final String USER = "postgres";
+    // private static final String PASSWORD = "password";
+
+    private Connection conn;
+
+    public EmployeeDBApp() throws SQLException {
+        conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        System.out.println("✅ Connected to Database!");
+    }
+
+    // Add employee
+    public void addEmployee(String name, String department, double salary) throws SQLException {
+        String sql = "INSERT INTO employees (name, department, salary) VALUES (?, ?, ?)";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setString(1, name);
+        stmt.setString(2, department);
+        stmt.setDouble(3, salary);
+        stmt.executeUpdate();
+        System.out.println("Employee added successfully!");
+    }
+
+    // View employees
+    public void viewEmployees() throws SQLException {
+        String sql = "SELECT * FROM employees";
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(sql);
+        System.out.println("---- Employee List ----");
+        while (rs.next()) {
+            System.out.println(
+                rs.getInt("id") + " | " +
+                rs.getString("name") + " | " +
+                rs.getString("department") + " | " +
+                rs.getDouble("salary")
+            );
+        }
+    }
+
+    // Update employee
+    public void updateEmployee(int id, String department, double salary) throws SQLException {
+        String sql = "UPDATE employees SET department=?, salary=? WHERE id=?";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setString(1, department);
+        stmt.setDouble(2, salary);
+        stmt.setInt(3, id);
+        int rows = stmt.executeUpdate();
+        if (rows > 0) {
+            System.out.println("Employee updated successfully!");
+        } else {
+            System.out.println("Employee not found.");
+        }
+    }
+
+    // Delete employee
+    public void deleteEmployee(int id) throws SQLException {
+        String sql = "DELETE FROM employees WHERE id=?";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setInt(1, id);
+        int rows = stmt.executeUpdate();
+        if (rows > 0) {
+            System.out.println("Employee deleted successfully!");
+        } else {
+            System.out.println("Employee not found.");
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            EmployeeDBApp app = new EmployeeDBApp();
+            Scanner sc = new Scanner(System.in);
+
+            while (true) {
+                System.out.println("\n===== Employee DB Menu =====");
+                System.out.println("1. Add Employee");
+                System.out.println("2. View Employees");
+                System.out.println("3. Update Employee");
+                System.out.println("4. Delete Employee");
+                System.out.println("5. Exit");
+                System.out.print("Enter choice: ");
+                int choice = sc.nextInt();
+
+                switch (choice) {
+                    case 1:
+                        System.out.print("Enter name: ");
+                        String name = sc.next();
+                        System.out.print("Enter department: ");
+                        String dept = sc.next();
+                        System.out.print("Enter salary: ");
+                        double salary = sc.nextDouble();
+                        app.addEmployee(name, dept, salary);
+                        break;
+                    case 2:
+                        app.viewEmployees();
+                        break;
+                    case 3:
+                        System.out.print("Enter Employee ID: ");
+                        int idU = sc.nextInt();
+                        System.out.print("Enter new department: ");
+                        String newDept = sc.next();
+                        System.out.print("Enter new salary: ");
+                        double newSalary = sc.nextDouble();
+                        app.updateEmployee(idU, newDept, newSalary);
+                        break;
+                    case 4:
+                        System.out.print("Enter Employee ID: ");
+                        int idD = sc.nextInt();
+                        app.deleteEmployee(idD);
+                        break;
+                    case 5:
+                        System.out.println("Exiting...");
+                        sc.close();
+                        System.exit(0);
+                    default:
+                        System.out.println("Invalid choice!");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
